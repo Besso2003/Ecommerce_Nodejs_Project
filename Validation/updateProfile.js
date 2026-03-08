@@ -12,5 +12,8 @@ export const updateProfileSchema = Joi.object({
             "string.pattern.base": "invalid Egyptian phone number for E-commerceApp",
             "string.empty": "phone is required for E-commerceApp"
 
+        }),
+    address: Joi.string().min(3).max(100).messages({
+            "string.min": "Address must be at least 3 characters long for E-commerceApp",
         })
 }).min(1); 
