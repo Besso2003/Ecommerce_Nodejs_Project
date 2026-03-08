@@ -16,10 +16,9 @@ const userSchema = new Schema({
         type: String,
         required: true 
     },
-    age: {
-        type: Number,
-        min: 20,
-        max: 50
+    phone: {
+        type: String,
+        unique: true
     },
     isConfirmed: {
         type: Boolean,

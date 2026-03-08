@@ -36,4 +36,15 @@ let login = async (req,res)=> {//need to check email in middlewareexist the chec
     }
 }
 
-export { register ,verifyAccount,login}
+// this must send token 
+let updateProfile = async (req, res) => {
+    
+    let updatedUser = await UserModel.findOneAndUpdate({ _id: req.decoded_token.id }, req.body,{returnDocument: 'after'})
+    if(updatedUser)
+    res.json({ message: "profile updated successfully", data: updatedUser })
+    else
+    res.status(400).json({ message: "user not found" })
+}
+
+
+export { register ,verifyAccount,login,updateProfile}
