@@ -15,7 +15,7 @@ export const createCategory = async (req, res) => {
     catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};
 
 // 2- Get All Categories
 export const getAllCategories = async (req, res) => {
@@ -26,7 +26,7 @@ export const getAllCategories = async (req, res) => {
     catch (error) {
         res.status(500).json({ error: error.message })
     }
-}
+};
 
 // 3- Get Category By ID
 export const getCategoryByID = async (req, res) => {
@@ -42,4 +42,36 @@ export const getCategoryByID = async (req, res) => {
     {
         res.status(500).json({error: error.message});
     }
-}
+};
+
+// 4- Update Category
+export const updateCategories = async (req, res) => {
+    try{
+        const { name, description, image } = req.body;
+        const updatedCategory = await Category.findByIdAndUpdate(
+            req.params.id,
+            {name, description, image},
+            {new: true}
+        );
+
+        if(!updatedCategory)
+        {
+            return res.status(404).json({ message: "Category not found" });
+        }
+    }
+    catch(error){
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// 5- Delete Category
+export const deleteCategory = async (req, res) => {
+  try {
+    const deleted = await Category.findByIdAndDelete(req.params.id);
+    if (!deleted)
+      return res.status(404).json({ message: "Category not found" });
+    res.json({ message: "Category deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -13,13 +13,9 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
-<<<<<<< HEAD
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-=======
-    "express": "^5.2.1",
     "google-auth-library": "^10.6.1",
->>>>>>> d8d8e2d4a2f33f029da86c221e63d1d3ed256ec5
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.0",
