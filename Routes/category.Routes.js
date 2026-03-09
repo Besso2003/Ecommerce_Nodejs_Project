@@ -4,12 +4,17 @@ const router = Router();
 import {
     createCategory,
     getAllCategories,
-    getCategoryByID
+    getCategoryByID,
+    updateCategory,
+    deleteCategory
 } from "../Controller/category.Controller.js";
 
+import validateToken from "../MiddleWare/validateToken.js";
 
-router.post("/", createCategory);
-router.get("/", getAllCategories);
-router.get("/:id", getCategoryByID);
+router.post("/", validateToken, createCategory);
+router.get("/",getAllCategories);
+router.get("/:id", validateToken,getCategoryByID);
+router.put("/:id", validateToken,updateCategory);
+router.delete("/:id", validateToken,deleteCategory);
 
 export default router;
