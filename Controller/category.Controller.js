@@ -3,6 +3,12 @@ import Category from "../Models/category.Model.js";
 // 1- create Category
 export const createCategory = async (req, res) => {
     try {
+        const { role } = req.decoded_token;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can create a category" });
+        }
+
         const { name, description, image } = req.body;
         const category = await Category.create({
             name,
@@ -47,6 +53,11 @@ export const getCategoryByID = async (req, res) => {
 // 4- Update Category
 export const updateCategory = async (req, res) => {
     try{
+        const { role } = req.decoded_token;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can create a category" });
+        }
         const { name, description, image } = req.body;
         const updatedCategory = await Category.findByIdAndUpdate(
             req.params.id,
@@ -69,6 +80,11 @@ export const updateCategory = async (req, res) => {
 // 5- Delete Category
 export const deleteCategory = async (req, res) => {
   try {
+    const { role } = req.decoded_token;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can create a category" });
+        }
     const deleted = await Category.findByIdAndDelete(req.params.id);
     if (!deleted)
       return res.status(404).json({ message: "Category not found" });

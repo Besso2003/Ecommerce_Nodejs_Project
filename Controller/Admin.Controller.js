@@ -14,7 +14,6 @@ let restrictProfile = async (req, res) => {
     }
     else
        res.status(400).json({ message: "Admin only can restrict / unrestrict the user" })
-
 }
 
 let unrestrictProfile = async (req, res) => {
