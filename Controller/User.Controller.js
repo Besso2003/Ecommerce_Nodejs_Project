@@ -31,8 +31,13 @@ let login = async (req,res)=> {//need to check email in middlewareexist the chec
     let matchedPassword=bcrypt.compare(req.body.password, req.foundUser.password)
 
     if(matchedPassword){
+        if (req.foundUser.isRestricted==true){
+            res.status(400).json({ message: "user is restricted contact the admin " })
+        }
+        else{
         let token = jwt.sign({email: req.foundUser.email, role: req.foundUser.role, id: req.foundUser._id}, "secret")
         res.json({message: "login successfully",token: token, data: req.foundUser})
+        }
     }
 }
 
