@@ -1,5 +1,5 @@
 import express from "express";
-import { addProductToWishlist, login, register, updateProfile, verifyAccount } from "../Controller/User.Controller.js";
+import { addProductToWishlist, login, register, reviewProduct, updateProfile, verifyAccount } from "../Controller/User.Controller.js";
 import { hashPassword } from "../MiddleWare/hashPassword.js";
 import { emailUnique } from "../MiddleWare/emailUnique.js";
 import { userValidationMiddleWare, validateUpdateProfile } from "../MiddleWare/UserValidatoin.js";
@@ -18,6 +18,8 @@ userRouter.post("/login", emailUnique, login)
 userRouter.post("/update-profile",validateToken,validateUpdateProfile,updateProfile )
 
 userRouter.post("/add-product-to-wishlist",validateToken,addProductToWishlist)
+
+userRouter.post("/review-product",validateToken,reviewProduct)
 
 
 
