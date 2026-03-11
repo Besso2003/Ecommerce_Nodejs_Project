@@ -15,10 +15,10 @@ const wishlistSchema = new mongoose.Schema({
             
         }
     ]
-
-    ,
-
     
+},{
+    timestamps: true, // 2 columns : createdAt, updatedAt
+    versionKey: false // __v
 })
 
 let wishlistModel = model("Wishlist", wishlistSchema)
