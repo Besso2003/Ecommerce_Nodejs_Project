@@ -52,4 +52,17 @@ let deleteProductFromWishlist = async (req, res) => {
     res.json({ message: "product deleted from your wishlist successfully", data: wishlist },)
 }
 
-export { addProductToWishlist , deleteProductFromWishlist}
+let getUserWishlist= async(req,res)=>{
+    //i should check if the user is customer , so take its token and check its role 
+    //then call model of wishlist and get the wishlist with id of the user from token and populate its items
+
+    if(req.decoded_token.role != "customer")
+        return res.status(400).json({ message: "only customer can add product to wishlist" })
+
+    let wishlist=await wishlistModel.findOne({userID: req.decoded_token.id}).populate("items")
+    if(!wishlist)
+        return res.status(400).json({ message: "no wishlist for this user" })
+    res.json({ message: "your wishlist", data: wishlist },)
+}
+
+export { addProductToWishlist , deleteProductFromWishlist,getUserWishlist}
