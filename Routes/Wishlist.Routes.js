@@ -4,7 +4,7 @@ import { addProductToWishlist, deleteProductFromWishlist } from "../Controller/W
 
 
 
-let wishlistRouter = express.Router();
+const wishlistRouter = express.Router();
 
 
 

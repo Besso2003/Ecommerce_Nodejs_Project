@@ -3,7 +3,7 @@ import validateToken from "../MiddleWare/validateToken.js";
 import { restrictProfile, unrestrictProfile } from "../Controller/Admin.Controller.js";
 
 
-let adminRouter = express.Router();
+const adminRouter = express.Router();
 
 
 adminRouter.use(validateToken)
