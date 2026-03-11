@@ -36,6 +36,8 @@ const userSchema = new Schema({
         enum: ["customer", "admin", "seller"],
         default: "customer"
     }
+    // can't added which list for each user cause not admin , seller have which list 
+
 },{
     timestamps: true, // 2 columns : createdAt, updatedAt
     versionKey: false // __v
