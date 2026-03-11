@@ -7,7 +7,7 @@ import {
     getCategoryByID,
     updateCategory,
     deleteCategory
-} from "../Controller/category.Controller.js";
+} from "../Controller/Category.Controller.js"
 
 import validateToken from "../MiddleWare/validateToken.js";
 
