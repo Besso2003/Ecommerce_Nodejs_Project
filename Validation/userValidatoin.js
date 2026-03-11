@@ -7,7 +7,7 @@ const userBackendValidationSchema = Joi.object({
         "string.min": "Name must be at least 3 characters long for E-commerceApp",
         "string.empty": "Name is required for E-commerceApp",
     }),
-    email: Joi.string().email().trim().required().messages({
+    email: Joi.string().email().required().messages({
         "string.email": "Invalid Email for E-commerceApp",
     }),
     password: Joi.string()
