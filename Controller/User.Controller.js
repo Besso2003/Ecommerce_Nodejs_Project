@@ -57,30 +57,31 @@ let updateProfile = async (req, res) => {
         res.status(400).json({ message: "user not found" })
 }
 
-let addProductToWishlist = async (req, res) => {
-    // i will check if the user is customer , so take its token and check its role 
-    // if customer call model of wishlist and add the product into it with id of the user from token and product id from params/body 
-    if (req.decoded_token.role != "customer")
-        return res.status(400).json({ message: "only customer can add product to wishlist" })
-    let product = await Product.findById(req.body.productID)
-    if (!product)
-        return res.status(400).json({ message: "product not found" })
+// let addProductToWishlist = async (req, res) => {
+//     // i will check if the user is customer , so take its token and check its role 
+//     // if customer call model of wishlist and add the product into it with id of the user from token and product id from params/body 
+//     if (req.decoded_token.role != "customer")
+//         return res.status(400).json({ message: "only customer can add product to wishlist" })
+//     let product = await Product.findById(req.body.productID)
+//     if (!product)
+//         return res.status(400).json({ message: "product not found" })
 
-    // want to check if the wish list have that product before don't added it 
-    let userwishlist = await wishlistModel.findOne({ userID: req.decoded_token.id })
+//     // want to check if the wish list have that product before don't added it 
+//     let userwishlist = await wishlistModel.findOne({ userID: req.decoded_token.id })
 
-    if (userwishlist && userwishlist.items.includes(req.body.productID))
-        return res.status(400).json({ message: "product already exists in wishlist" })
+//     if (userwishlist && userwishlist.items.includes(req.body.productID))
+//         return res.status(400).json({ message: "product already exists in wishlist" })
 
 
-    let wishlist = await wishlistModel.findOneAndUpdate({ userID: req.decoded_token.id }, { $addToSet: { items: product._id } }, { upsert: true, returnDocument: 'after' })
+//     let wishlist = await wishlistModel.findOneAndUpdate({ userID: req.decoded_token.id }, { $addToSet: { items: product._id } }, { upsert: true, returnDocument: 'after' })
 
-    if (!wishlist)
-        return res.status(400).json({ message: "product not added to wishlist" })
+//     if (!wishlist)
+//         return res.status(400).json({ message: "product not added to wishlist" })
 
-    res.json({ message: "product added to wishlist successfully", data: wishlist },)
+//     res.json({ message: "product added to wishlist successfully", data: wishlist },)
 
-}
+// }
+
 let reviewProduct = async(req,res)=>{
     // i want check if the user is customer so throw token  ,check if the product exist from req.body.productID
     // then call model of review and add the review with id of the user from token and product id from body 
@@ -114,4 +115,4 @@ let reviewProduct = async(req,res)=>{
 
 
 
-export { register, verifyAccount, login, updateProfile, addProductToWishlist ,reviewProduct}
+export { register, verifyAccount, login, updateProfile ,reviewProduct}

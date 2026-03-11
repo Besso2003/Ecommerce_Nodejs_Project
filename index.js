@@ -4,6 +4,7 @@ import userRouter from "./Routes/User.Routes.js";
 import adminRouter from "./Routes/Admin.Routes.js";
 import categoryRoutes from "./Routes/Category.Routes.js"
 import productRoutes  from "./Routes/Product.Routes.js"
+import wishlistRouter from "./Routes/Wishlist.Routes.js";
 
 const app = express();
 
@@ -12,6 +13,7 @@ dbConnect();
 app.use(express.json()) // this for req.body 
 app.use(userRouter)
 app.use(adminRouter)
+app.use(wishlistRouter)
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
