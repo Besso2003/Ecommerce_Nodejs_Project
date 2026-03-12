@@ -34,8 +34,34 @@ const addToCart = async (req, res) => {
 }
 
 
-const removeCartItem = async (req,res) => {
-    
+const removeCartItem = async (req, res) => {
+    try {
+        const userId = req.decoded_token.id;
+        const { productId } = req.params;
+        let cart = await Cart.findOne({ userID: userId });
+
+        if (!cart) {
+            return res.json({ message: "Your Cart Is Empty!" });
+        }
+
+        const existingItem = cart.items.find(
+            item => item.productID.toString() === productId
+        );
+
+        if (existingItem) {
+            cart.items = cart.items.filter(
+                item => item.productID.toString() !== productId
+            );
+        } else {
+            return res.status(404).json({ message: "Product not found in cart" });
+        }
+
+        await cart.save();
+        res.json({ message: "Product removed successfully", data: cart });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 }
 
 const getCart = async (req,res) => {
@@ -43,13 +69,13 @@ const getCart = async (req,res) => {
         const userId = req.decoded_token.id;
         const cart = await Cart.findOne({ userID: userId }).populate("items.productID");
         if(!cart || cart.items.length === 0){
-            res.json({ message: "Your Cart Is Empty!"});
+            return res.json({ message: "Your Cart Is Empty!"});
         }
 
-        res.json({ message: "My Cart", data: cart });
+        return res.json({ message: "My Cart", data: cart });
     }
     catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 }
 
@@ -58,7 +84,14 @@ const updateCart = async (req,res) => {
 }
 
 const clearCart = async (req,res) => {
-    
+    try{
+        const userId = req.decoded_token.id;
+        await Cart.findOneAndDelete({ userID: userId })
+        res.json({ message: "Cart Cleared Successfully!"});
+    }
+    catch(error){
+        res.status(500).json({ message: error.message });
+    }
 }
 
 export {addToCart, removeCartItem, getCart, updateCart, clearCart}
