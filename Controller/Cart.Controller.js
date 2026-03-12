@@ -79,8 +79,38 @@ const getCart = async (req,res) => {
     }
 }
 
-const updateCart = async (req,res) => {
-    
+const updateItemQuantity = async (req, res) => {
+    try {
+        const userId = req.decoded_token.id;
+        const { productId, quantity } = req.body;
+
+        if (quantity < 1) {
+            return res.status(400).json({ message: "Please Enter Valid Quantity" });
+        }
+
+        const cart = await Cart.findOne({ userID: userId });
+
+        if (!cart) {
+            return res.status(404).json({ message: "Cart not found" });
+        }
+
+        const existingItem = cart.items.find(
+            item => item.productID.toString() === productId
+        );
+
+        if (!existingItem) {
+            return res.status(404).json({ message: "Product not found in cart" });
+        }
+
+        existingItem.quantity = quantity; 
+
+        await cart.save();
+
+        return res.json({ message: "Quantity updated successfully", data: cart });
+    }
+    catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
 }
 
 const clearCart = async (req,res) => {
@@ -94,4 +124,4 @@ const clearCart = async (req,res) => {
     }
 }
 
-export {addToCart, removeCartItem, getCart, updateCart, clearCart}
+export {addToCart, removeCartItem, getCart, updateItemQuantity, clearCart}
