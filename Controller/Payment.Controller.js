@@ -1,76 +1,110 @@
-// import Stripe from "stripe";
-// import Order from "../Models/order.Model.js";
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-// const processPayment = async (req, res) => {
-//     try {
-//         const userId = req.decoded_token.id;
-//         const { orderId } = req.body;
-
-//         // 1. Find the order
-//         const order = await Order.findOne({
-//             _id: orderId,
-//             userId: userId
-//         });
-
-//         if (!order) {
-//             return res.status(404).json({ message: "Order Not Found!" });
-//         }
-
-//         if (order.paymentStatus === "paid") {
-//             return res.status(400).json({ message: "Order Already Paid!" });
-//         }
-
-//         // 2. Handle Stripe payment
-//         if (order.paymentMethod === "stripe") {
-//             const paymentIntent = await stripe.paymentIntents.create({
-//                 amount: Math.round(order.pricing.total * 100), // in cents
-//                 currency: "egp",
-//                 payment_method_types: ["card"],  // only allow cards for now
-//                 metadata: {
-//                     orderId: order._id.toString(),
-//                     userId: order.userId.toString()
-//                 }
-//             });
-
-//             // 3. Return client_secret to the client
-//             return res.status(200).json({
-//                 message: "Stripe Payment Intent Created",
-//                 clientSecret: paymentIntent.client_secret
-//             });
-//         }
-
-//         // 4. Cash on Delivery (COD)
-//         if (order.paymentMethod === "cod") {
-//             order.paymentStatus = "pending";
-//             order.status = "confirmed";
-//             await order.save();
-
-//             return res.status(200).json({
-//                 message: "Order confirmed with Cash On Delivery",
-//                 data: order
-//             });
-//         }
-
-//         return res.status(400).json({ message: "Invalid Payment Method!" });
-
-//     } catch (error) {
-//         return res.status(500).json({ message: error.message });
-//     }
-// };
-
-// export { processPayment };
-
-
-
 import Stripe from "stripe";
 import Order from "../Models/order.Model.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-const processPayment = async (req, res) => {
+
+// STRIPE PAYMENT
+const processStripePayment = async (req, res) => {
     try {
+
+        const userId = req.decoded_token.id;
+        const { orderId, paymentMethodTest } = req.body;
+
+        const order = await Order.findOne({
+            _id: orderId,
+            userId: userId
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                message: "Order not found"
+            });
+        }
+
+        if (order.paymentMethod !== "stripe") {
+            return res.status(400).json({
+                message: "This order is not using Stripe payment"
+            });
+        }
+
+        if (order.paymentStatus !== "pending") {
+            return res.status(400).json({
+                message: "Order is not eligible for payment",
+                currentStatus: order.paymentStatus
+            });
+        }
+
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.round(order.pricing.total * 100),
+            currency: "egp",
+            payment_method_types: ["card"],
+            metadata: {
+                orderId: order._id.toString(),
+                userId: order.userId.toString()
+            }
+        });
+
+        order.stripePaymentIntentId = paymentIntent.id;
+        await order.save();
+
+        let confirmedPayment;
+
+        try {
+
+            confirmedPayment = await stripe.paymentIntents.confirm(
+                paymentIntent.id,
+                {
+                    payment_method: paymentMethodTest || "pm_card_visa"
+                }
+            );
+
+        } catch (stripeError) {
+
+            return res.status(400).json({
+                message: "Payment Failed",
+                stripeError: stripeError.message
+            });
+
+        }
+
+        if (confirmedPayment.status === "succeeded") {
+
+            order.paymentStatus = "paid";
+            order.status = "confirmed";
+            order.stripePaymentId = confirmedPayment.id;
+
+            await order.save();
+
+            return res.status(200).json({
+                message: "Payment successful",
+                paymentStatus: order.paymentStatus,
+                stripePaymentId: confirmedPayment.id,
+                order
+            });
+
+        }
+
+        return res.status(400).json({
+            message: "Payment not completed",
+            stripeStatus: confirmedPayment.status
+        });
+
+    } catch (error) {
+
+        return res.status(500).json({
+            message: "Server Error",
+            error: error.message
+        });
+
+    }
+};
+
+
+// CASH ON DELIVERY (COD)
+const processCODPayment = async (req, res) => {
+    try {
+
         const userId = req.decoded_token.id;
         const { orderId } = req.body;
 
@@ -80,61 +114,44 @@ const processPayment = async (req, res) => {
         });
 
         if (!order) {
-            return res.status(404).json({ message: "Order Not Found!" });
-        }
-
-        if (order.paymentStatus === "paid") {
-            return res.status(400).json({ message: "Order Already Paid!" });
-        }
-
-        // Stripe payment
-        if (order.paymentMethod === "stripe") {
-
-            const paymentIntent = await stripe.paymentIntents.create({
-                amount: Math.round(order.pricing.total * 100),
-                currency: "egp",
-                payment_method_types: ["card"],
-                metadata: {
-                    orderId: order._id.toString(),
-                    userId: order.userId.toString()
-                }
-            });
-
-            const confirmedPayment = await stripe.paymentIntents.confirm(
-                paymentIntent.id,
-                { payment_method: "pm_card_visa" }
-            );
-
-            
-            order.paymentStatus = "paid";
-            order.status = "confirmed";
-            order.stripePaymentId = confirmedPayment.id;
-            await order.save();
-
-            return res.status(200).json({
-                message: "Payment successful",
-                paymentStatus: order.paymentStatus,
-                order: order
+            return res.status(404).json({
+                message: "Order not found"
             });
         }
 
-        // Cash on Delivery (COD)
-        if (order.paymentMethod === "cod") {
-            order.paymentStatus = "pending";
-            order.status = "confirmed";
-            await order.save();
-
-            return res.status(200).json({
-                message: "Order confirmed with Cash On Delivery",
-                data: order
+        if (order.paymentMethod !== "cod") {
+            return res.status(400).json({
+                message: "This order is not using Cash On Delivery"
             });
         }
 
-        return res.status(400).json({ message: "Invalid Payment Method!" });
+        if (order.paymentStatus !== "pending") {
+            return res.status(400).json({
+                message: "Order already processed",
+                currentStatus: order.paymentStatus
+            });
+        }
+
+        order.status = "confirmed";
+        order.paymentStatus = "pending";
+
+        await order.save();
+
+        return res.status(200).json({
+            message: "Order confirmed with Cash On Delivery",
+            paymentStatus: order.paymentStatus,
+            order
+        });
 
     } catch (error) {
-        return res.status(500).json({ message: error.message });
+
+        return res.status(500).json({
+            message: "Server Error",
+            error: error.message
+        });
+
     }
 };
 
-export { processPayment };
+
+export { processStripePayment, processCODPayment };

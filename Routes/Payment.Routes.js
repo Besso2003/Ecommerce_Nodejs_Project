@@ -1,9 +1,10 @@
 import express from "express";
-import { processPayment } from "../Controller/Payment.Controller.js";
+import { processStripePayment, processCODPayment } from "../Controller/Payment.Controller.js";
 import validateToken from "../MiddleWare/validateToken.js";
 
-let paymentRouter = express.Router();
+const paymentRouter = express.Router();
 
-paymentRouter.post("/process", validateToken, processPayment);
+paymentRouter.post("/stripe", validateToken, processStripePayment);
+paymentRouter.post("/cod", validateToken, processCODPayment);
 
 export default paymentRouter;
