@@ -8,6 +8,7 @@ import wishlistRouter from "./Routes/Wishlist.Routes.js";
 import reviewRouter from "./Routes/Review.Routes.js";
 import paymentRouter from "./Routes/Payment.Routes.js";
 import cartRouter from "./Routes/Cart.Routers.js"
+import orderRouter from "./Routes/Order.Routers.js"
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(adminRouter)
 app.use(wishlistRouter)
 app.use(reviewRouter)
 app.use(cartRouter)
+app.use(orderRouter)
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
