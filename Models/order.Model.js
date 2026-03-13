@@ -11,20 +11,20 @@ const orderItemSchema = new mongoose.Schema({
     quantity: {
         type: Number,
         required: true,
-         min: 1
+        min: 1
     },
-    productName: { 
+    productName: {
         type: String,
-        required: true 
+        required: true
     },
-    price: { 
+    price: {
         type: Number,
-        required: true 
-    },  
+        required: true
+    },
     description: {
         type: String,
     },
-    images: [{type: String}],
+    images: [{ type: String }],
 });
 
 const orderSchema = new mongoose.Schema({
@@ -56,8 +56,20 @@ const orderSchema = new mongoose.Schema({
         default: "pending"
     },
 
+    paymentMethod: {
+        type: String,
+        enum: ["stripe", "paypal", "cod", "wallet"],
+        required: true
+    },
+
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed"],
+        default: "pending"
+    }
+
     // paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" } // to be implemented by bassant
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("Order", orderSchema);
+export default mongoose.model("Order", orderSchema);
