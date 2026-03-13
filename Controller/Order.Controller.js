@@ -1,10 +1,14 @@
 import Order from "../Models/order.Model.js"
 import Cart from "../Models/cart.Model.js"
 
-const orderPlacment = async (req, res) => {
+const orderPlacement = async (req, res) => {
     try {
         const userId = req.decoded_token.id;
         const { shippingAddress, paymentMethod } = req.body;
+
+        if (!shippingAddress || !paymentMethod) {
+            return res.status(400).json({ message: "Shipping address and payment method are required" });
+        }
 
         const cart = await Cart.findOne({ userID: userId }).populate("items.productID");
 
@@ -19,7 +23,7 @@ const orderPlacment = async (req, res) => {
         }
 
         const orderItems = cart.items.map(item => ({
-            productId: item.productID._id,
+            productID: item.productID._id,
             productName: item.productID.name,
             images: item.productID.images,
             price: item.productID.price,
@@ -36,6 +40,8 @@ const orderPlacment = async (req, res) => {
             userId,
             items: orderItems,
             shippingAddress,
+            paymentMethod,
+            paymentStatus: "pending",
             pricing: { subtotal, shippingFee, tax, total },
             status: "pending"
         });
@@ -49,51 +55,48 @@ const orderPlacment = async (req, res) => {
     }
 }
 
-const getOrders = async (req,res) => {
-    try{
+const getOrders = async (req, res) => {
+    try {
         const userId = req.decoded_token.id;
-        const orders = await Order.find({
-            userId:userId
-        }).populate("items.productID");
+
+        const orders = await Order.find({ userId });
+
         if (!orders || orders.length === 0) {
             return res.status(404).json({ message: "No orders found" });
         }
+
         return res.status(200).json({ message: "Your Orders:", data: orders });
     }
-    catch(error){
+    catch (error) {
         return res.status(500).json({ message: error.message });
     }
-
-
-
 }
 
-const deleteOrder = async (req,res) => {
-    try{
+const deleteOrder = async (req, res) => {
+    try {
         const userId = req.decoded_token.id;
         const { orderId } = req.params;
+
         const order = await Order.findOne({
-            _id:orderId,
-            userId:userId
-        })
-        if (!order || order.length === 0) {
+            _id: orderId,
+            userId: userId
+        });
+
+        if (!order) {
             return res.status(404).json({ message: "No order found" });
         }
-        if (order.status == "pending"){
-            await Order.findByIdAndDelete({
-                _id:orderId
-            })
+
+        if (order.status === "pending") {
+            await Order.findByIdAndDelete(orderId);
             return res.status(200).json({ message: "Order deleted successfully" });
         }
-        else{
-            return res.status(400).json({ message: "Only pending orders can be cancelled" });
 
-        }
-        
+        return res.status(400).json({ message: "Only pending orders can be cancelled" });
+
     }
-    catch(error){
+    catch (error) {
         return res.status(500).json({ message: error.message });
     }
 }
 
-export { orderPlacment,getOrders,deleteOrder }
+export { orderPlacement, getOrders, deleteOrder }
