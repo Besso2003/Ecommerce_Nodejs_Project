@@ -24,7 +24,7 @@ app.use(orderRouter)
 
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/payment", paymentRouter);
+app.use("/payment", paymentRouter);
 
 
 app.listen(3000,()=>{
