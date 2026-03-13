@@ -38,6 +38,8 @@ const orderSchema = new mongoose.Schema({
         total: { type: Number, required: true }
     },
 
+    promoCode: { type: String, default: null },
+
     status: {
         type: String,
         enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
