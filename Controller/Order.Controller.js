@@ -49,4 +49,51 @@ const orderPlacment = async (req, res) => {
     }
 }
 
-export { orderPlacment }
+const getOrders = async (req,res) => {
+    try{
+        const userId = req.decoded_token.id;
+        const orders = await Order.find({
+            userId:userId
+        }).populate("items.productID");
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({ message: "No orders found" });
+        }
+        return res.status(200).json({ message: "Your Orders:", data: orders });
+    }
+    catch(error){
+        return res.status(500).json({ message: error.message });
+    }
+
+
+
+}
+
+const deleteOrder = async (req,res) => {
+    try{
+        const userId = req.decoded_token.id;
+        const { orderId } = req.params;
+        const order = await Order.findOne({
+            _id:orderId,
+            userId:userId
+        })
+        if (!order || order.length === 0) {
+            return res.status(404).json({ message: "No order found" });
+        }
+        if (order.status == "pending"){
+            await Order.findByIdAndDelete({
+                _id:orderId
+            })
+            return res.status(200).json({ message: "Order deleted successfully" });
+        }
+        else{
+            return res.status(400).json({ message: "Only pending orders can be cancelled" });
+
+        }
+        
+    }
+    catch(error){
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+export { orderPlacment,getOrders,deleteOrder }
