@@ -44,7 +44,31 @@ const orderSchema = new mongoose.Schema({
         default: "pending"
     },
 
-    paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" }
+    // paymentMethod: {
+    //     type: String,
+    //     enum: ["stripe", "paypal", "cod", "wallet"],
+    //     required: true
+    // },
+
+    // paymentStatus: {
+    //     type: String,
+    //     enum: ["pending", "paid", "failed"],
+    //     default: "pending"
+    // }
+
+    // paymentMethod: {
+    //     type: String,
+    //     enum: ["stripe", "paypal", "cod", "wallet"],
+    //     required: true
+    // },
+
+    // paymentStatus: {
+    //     type: String,
+    //     enum: ["pending", "paid", "failed"],
+    //     default: "pending"
+    // }
+
+    // paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" }
 
 }, { timestamps: true });
 
