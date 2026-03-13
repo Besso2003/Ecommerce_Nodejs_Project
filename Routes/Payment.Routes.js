@@ -1,8 +1,9 @@
 import express from "express";
-import { StripePayment } from "../Controller/Payment.Controller.js";
+import { processPayment } from "../Controller/Payment.Controller.js";
+import validateToken from "../MiddleWare/validateToken.js";
 
 let paymentRouter = express.Router();
 
-paymentRouter.post("/stripe", StripePayment);
+paymentRouter.post("/process", validateToken, processPayment);
 
 export default paymentRouter;
