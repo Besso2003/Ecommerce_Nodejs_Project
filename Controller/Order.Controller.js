@@ -1,10 +1,11 @@
 import Order from "../Models/order.Model.js"
 import Cart from "../Models/cart.Model.js"
+import PromoCode from "../Models/PromoCode.Model.js" // <-- import promo code model
 
 const orderPlacement = async (req, res) => {
     try {
         const userId = req.decoded_token.id;
-        const { shippingAddress, paymentMethod } = req.body;
+        const { shippingAddress, paymentMethod, promoCode } = req.body; // <-- added promoCode
 
         if (!shippingAddress || !paymentMethod) {
             return res.status(400).json({ message: "Shipping address and payment method are required" });
@@ -22,6 +23,23 @@ const orderPlacement = async (req, res) => {
             }
         }
 
+        let discountAmount = 0;
+        let appliedPromo = null;
+
+        if (promoCode) {
+            const promo = await PromoCode.findOne({ code: promoCode, isActive: true });
+
+            if (!promo) {
+                return res.status(400).json({ message: "Invalid or inactive promo code" });
+            }
+
+            if (promo.usedBy.includes(userId)) {
+                return res.status(400).json({ message: "You have already used this promo code" });
+            }
+
+            appliedPromo = promo;
+        }
+
         const orderItems = cart.items.map(item => ({
             productID: item.productID._id,
             productName: item.productID.name,
@@ -34,7 +52,13 @@ const orderPlacement = async (req, res) => {
         const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
         const shippingFee = 20;
         const tax = subtotal * 0.14;
-        const total = subtotal + shippingFee + tax;
+        const totalBeforeDiscount = subtotal + shippingFee + tax;
+
+        if (appliedPromo) {
+            discountAmount = (subtotal * appliedPromo.discountPercentage) / 100;
+        }
+
+        const total = totalBeforeDiscount - discountAmount;
 
         const order = await Order.create({
             userId,
@@ -42,8 +66,9 @@ const orderPlacement = async (req, res) => {
             shippingAddress,
             paymentMethod,
             paymentStatus: "pending",
-            pricing: { subtotal, shippingFee, tax, total },
-            status: "pending"
+            pricing: { subtotal, shippingFee, tax, total, discount: discountAmount },
+            status: "pending",
+            promoCode: appliedPromo ? appliedPromo.code : null
         });
 
         await Cart.findOneAndDelete({ userID: userId });
