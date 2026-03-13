@@ -56,6 +56,9 @@ const orderPlacement = async (req, res) => {
 
         if (appliedPromo) {
             discountAmount = (subtotal * appliedPromo.discountPercentage) / 100;
+
+            appliedPromo.usedBy.push(userId);
+            await appliedPromo.save();
         }
 
         const total = totalBeforeDiscount - discountAmount;
