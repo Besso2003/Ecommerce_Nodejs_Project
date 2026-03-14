@@ -1,35 +1,23 @@
 import mongoose from "mongoose";
-import Product from "./product.Model.js";
-import User from "./UserModel.js"
 
 const orderItemSchema = new mongoose.Schema({
-    productID: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: Product,
-        required: true
-    },
-    quantity: {
-        type: Number,
-        required: true,
-         min: 1
-    },
-    productName: { 
-        type: String,
-        required: true 
-    },
-    price: { 
-        type: Number,
-        required: true 
-    },  
-    description: {
-        type: String,
-    },
-    images: [{type: String}],
+    productID: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+    productName: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+    subtotal: { type: Number, required: true },
+    images: [{ type: String }]
 });
 
 const orderSchema = new mongoose.Schema({
-
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+
+    guestInfo: {
+        name: { type: String },
+        email: { type: String },
+        phone: { type: String }
+    },
+
     items: [orderItemSchema],
 
     shippingAddress: {
@@ -50,14 +38,29 @@ const orderSchema = new mongoose.Schema({
         total: { type: Number, required: true }
     },
 
+    promoCode: { type: String, default: null },
+
     status: {
         type: String,
         enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
         default: "pending"
     },
 
-    // paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" } // to be implemented by bassant
+    paymentMethod: {
+        type: String,
+        enum: ["stripe", "paypal", "cod", "wallet"],
+        required: true
+    },
+    paymentStatus: {
+        type: String,
+        enum: ["pending", "paid", "failed"],
+        default: "pending"
+    }
+
+    // paymentId: { type: mongoose.Schema.Types.ObjectId, ref: "Payment" }
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("Order", orderSchema);
+const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
+
+export default Order;
