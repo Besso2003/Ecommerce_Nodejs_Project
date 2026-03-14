@@ -11,6 +11,16 @@ const categorySchema = new mongoose.Schema({
     },
     image: {
         type: String,
+    },
+    status: {
+        type: String,
+        enum: ["pending" , "approved", "rejected"],
+        default: "pending"
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
     }
 },
 {
