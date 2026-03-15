@@ -2,6 +2,7 @@ import { sendEmail } from "../Email/email.js"
 import UserModel from "../Models/UserModel.js"
 import jwt, { decode } from "jsonwebtoken"
 import bcrypt from "bcrypt"
+import { template } from "../Email/emailTemplate.js"
 import userModel from "../Models/UserModel.js"
 import Product from "../Models/Product.Model.js"
 import wishlistModel from "../Models/wishlistModel.js"
@@ -10,8 +11,13 @@ import reviewModel from "../Models/ReviewModel.js"
 //should hide password (done), check email is unique , hash password, send confirmation email,do backend validatoin
 let register = async (req, res) => {
     let addedUser = await UserModel.insertOne(req.body)
+    const tokenedEmail = jwt.sign(req.body.email, "secret");
+    sendEmail(
+        req.body.email,
+        "Confirm Your Account",
+        template(tokenedEmail)
+    )
 
-    sendEmail(req.body.email)
     addedUser.password = undefined
     res.json({
         message: "user registered successfully",

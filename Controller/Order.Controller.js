@@ -1,6 +1,9 @@
 import Order from "../Models/order.Model.js"
 import Cart from "../Models/cart.Model.js"
+import User from "../Models/UserModel.js"
 import PromoCode from "../Models/PromoCode.Model.js" // <-- import promo code model
+import { orderStatusTemplate } from "../Email/orderStatusTemplate.js"
+import { sendEmail } from "../Email/email.js"
 
 const orderPlacement = async (req, res) => {
     try {
@@ -127,4 +130,81 @@ const deleteOrder = async (req, res) => {
     }
 }
 
-export { orderPlacement, getOrders, deleteOrder }
+const getOrderByStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const userId = req.decoded_token.id;
+
+        const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const orders = await Order.find({ userId: userId, status: status });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: `No ${status} orders found` });
+        }
+
+        return res.status(200).json({ message: "Orders fetched successfully", data: orders });
+    }
+    catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+const updateOrderStatus = async (req, res) => {
+    try {
+        const role = req.decoded_token?.role;
+        const { status, orderId } = req.body;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can update order status" });
+        }
+
+        const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        const isCOD = order.paymentMethod === "cod";
+
+        if (isCOD && order.status === "pending") {
+        } else if ((status === "shipped" || status === "delivered") && order.status !== "confirmed") {
+            return res.status(400).json({ message: "Order must be confirmed before it can be shipped or delivered" });
+        }
+
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId,
+            { status },
+            { new: true }
+        );
+
+        const user = await User.findById(order.userId);
+        if (user) {
+            await sendEmail(
+                user.email,
+                "Your Order Status Has Been Updated",
+                orderStatusTemplate({
+                    userName: user.name,
+                    orderId: order._id,
+                    status: status,
+                    total: order.pricing.total
+                })
+            );
+        }
+
+        return res.status(200).json({ message: "Order status updated successfully", data: updatedOrder });
+    }
+    catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+export { orderPlacement, getOrders, deleteOrder, getOrderByStatus, updateOrderStatus }
