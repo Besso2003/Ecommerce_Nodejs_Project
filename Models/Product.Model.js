@@ -37,6 +37,10 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "approved", "rejected"],
         default: "pending"
+    },
+    isAvailable: {
+        type: Boolean,
+        default: true
     }
 
 }, {

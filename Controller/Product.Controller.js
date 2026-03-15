@@ -60,6 +60,7 @@ export const getAllProducts = async (req, res) => {
         // Non-admins can only see approved products
         if (role !== "admin") {
             filter.status = "approved";
+            
         } else if (status) {
             filter.status = status;
         }
@@ -284,3 +285,48 @@ export const rejectProduct = async (req, res) => {
     }
 };
  
+// 9- Update Stock (Seller owns product or Admin)
+export const updateStock = async (req, res) => {
+    try {
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can update stock" });
+        }
+
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        // Seller can only update stock of their own product
+        if (role === "seller" && product.seller.toString() !== userId) {
+            return res.status(403).json({ message: "You can only update stock of your own products" });
+        }
+
+        // Seller can only update stock of approved products
+        if (role === "seller" && product.status !== "approved") {
+            return res.status(403).json({ message: "Cannot update stock of a non-approved product" });
+        }
+
+        const { stock } = req.body;
+
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            {
+                stock,
+                isAvailable: stock > 0  // auto mark unavailable if stock hits 0
+            },
+            { new: true }
+        );
+
+        res.status(200).json({
+            message: stock === 0 ? "Product is now out of stock" : "Stock updated successfully",
+            product: updatedProduct
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
