@@ -16,9 +16,9 @@ const ProductSchema = new mongoose.Schema({
         required: true
     },
 
-    images: [{type: String}],
+    images: [{ type: String }],
 
-    stock:{
+    stock: {
         type: Number,
         default: 0
     },
@@ -28,6 +28,16 @@ const ProductSchema = new mongoose.Schema({
         ref: Category,
         required: true
     },
+    seller: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending"
+    }
 
 }, {
     timestamps: true

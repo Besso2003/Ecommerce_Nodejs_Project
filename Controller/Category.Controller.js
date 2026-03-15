@@ -34,10 +34,10 @@ export const getAllCategories = async (req, res) => {
     try {
         const { role } = req.decoded_token || {};
  
-        const filter = role === "admin" ? {} : { status: "approved" };
+        
  
-        const categories = await Category.find(filter).populate("createdBy", "name email");
-        res.json(categories);
+        const categories = await Category.find().populate("createdBy", "name email");
+        res.json({count: categories.length, data: categories});
     }
     catch (error) {
         res.status(500).json({ error: error.message })
@@ -82,7 +82,7 @@ export const updateCategory = async (req, res) => {
 
         // Seller cannot edit an already approved category
         if (role === "seller" && category.status === "approved") {
-            return res.status(403).json({ message: "Cannot edit an approved category" });
+            return res.status(403).json({ message: "Cannot edit an approved category, contact admin" });
         }
 
         const { name, description, image } = req.body;

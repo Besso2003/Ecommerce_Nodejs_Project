@@ -1,4 +1,5 @@
 import Product from "../Models/Product.Model.js";
+import Category from "../Models/Category.Model.js"
 
 // 1- Create Product (Seller or Admin)
 // - Seller can use ANY approved category
