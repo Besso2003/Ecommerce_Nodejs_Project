@@ -1,8 +1,9 @@
 import Category from "../Models/Category.Model.js"
+import Product from "../Models/Product.Model.js"
 
 // 1- Create Category (Admin or Seller)
-// Admin → auto approved
-// Seller → pending until admin approves
+// Admin -> auto approved
+// Seller -> pending until admin approves
 export const createCategory = async (req, res) => {
     try {
         const role = req.decoded_token?.role;
@@ -146,7 +147,7 @@ export const updateCategory = async (req, res) => {
     }
 };
 
-// 5- Delete Category 
+// 5- Delete Category -> Must be empty 
 // Seller -> delete it own pending - rejected Category 
 // Admin -> delete anything
 export const deleteCategory = async (req, res) => {
@@ -164,13 +165,21 @@ export const deleteCategory = async (req, res) => {
         }
 
         // Seller can only delete their own category
-        if (role === "seller" && category.createdBy.toString() !== userId) {
+        if (role === "seller" && category.createdBy?.toString() !== userId) {
             return res.status(403).json({ message: "You can only delete your own categories" });
         }
 
         // Seller cannot delete an approved category
         if (role === "seller" && category.status === "approved") {
             return res.status(403).json({ message: "Cannot delete an approved category, contact admin" });
+        }
+
+        // Check if any products are using this category
+        const productsCount = await Product.countDocuments({ category: req.params.id });
+        if (productsCount > 0) {
+            return res.status(400).json({ 
+                message: `Cannot delete category — it has ${productsCount} product(s) linked to it` 
+            });
         }
 
         await Category.findByIdAndDelete(req.params.id);

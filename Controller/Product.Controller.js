@@ -3,8 +3,8 @@ import Category from "../Models/Category.Model.js"
 
 // 1- Create Product (Seller or Admin)
 // - Seller can use ANY approved category
-// - Admin-created → auto approved
-// - Seller-created → pending until admin approves
+// - Admin: auto approved
+// - Seller: pending until admin approves
 export const createProduct = async (req, res) => {
     try {
         const { role, id: userId } = req.decoded_token;
@@ -42,63 +42,83 @@ export const createProduct = async (req, res) => {
 
 // 2- Get All Products + Search & Filter
 // - Admins see all products (any status)
-// - Everyone else only sees approved products
+// - Customer else only sees approved products
+// - Seller see approved + his own pending and rejected
 // query params:
 // ?search=name
 // ?category=catID
 // ?minPrice, ?maxPrice
 // ?stock=num
 // ?sort -> price_asc, price_desc, newest, oldest
-// ?status=pending (admin only)
+// ?status=pending 
 export const getAllProducts = async (req, res) => {
     try {
-        const { role } = req.decoded_token || {};
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
         const { search, category, minPrice, maxPrice, stock, sort, status, page = 1, limit = 10 } = req.query;
- 
+
         const filter = {};
- 
-        // Non-admins can only see approved products
-        if (role !== "admin") {
+
+        if (role === "admin") {
+            // Admin sees everything, optionally filter by status
+            if (status) filter.status = status;
+        } else if (role === "seller") {
+           if (status) {
+        // Seller filters by specific status
+        if (status === "approved") {
+            // All approved products
             filter.status = "approved";
-            
-        } else if (status) {
+        } else if (status === "pending" || status === "rejected") {
+            // Only their own pending/rejected
             filter.status = status;
+            filter.seller = userId;
         }
- 
+    } else {
+        // No status filter — seller sees all approved + their own pending/rejected
+        filter.$or = [
+            { status: "approved" },
+            { seller: userId }
+        ];
+    }
+        } else {
+            // Customer or guest sees only approved
+            filter.status = "approved";
+        }
+
         if (search) {
             filter.name = { $regex: search, $options: "i" };
         }
- 
+
         if (category) {
             filter.category = category;
         }
- 
+
         if (minPrice || maxPrice) {
             filter.price = {};
             if (minPrice) filter.price.$gte = Number(minPrice);
             if (maxPrice) filter.price.$lte = Number(maxPrice);
         }
- 
+
         if (stock) {
             filter.stock = { $gte: Number(stock) };
         }
- 
+
         const sortOptions = {
             price_asc: { price: 1 },
             price_desc: { price: -1 },
             newest: { createdAt: -1 },
             oldest: { createdAt: 1 }
         };
- 
+
         const sortBy = sortOptions[sort] || { createdAt: -1 };
- 
+
         const products = await Product.find(filter)
             .populate("category", "name description")
             .populate("seller", "name email")
             .sort(sortBy)
             .skip((page - 1) * limit)
             .limit(Number(limit));
- 
+
         res.status(200).json({ count: products.length, data: products });
     }
     catch (error) {
@@ -106,7 +126,7 @@ export const getAllProducts = async (req, res) => {
     }
 };
 
-// 3- Get product by ID
+
 // 3- Get Product by ID
 export const getProductById = async (req, res) => {
     try {
@@ -127,7 +147,7 @@ export const getProductById = async (req, res) => {
 
 // 4- Update Product
 // - Seller can only update their own pending or rejected product
-// - When seller updates → resets to pending
+// - When seller updates: resets to pending
 // - Admin can update any product regardless of status
 export const updateProduct = async (req, res) => {
     try {
