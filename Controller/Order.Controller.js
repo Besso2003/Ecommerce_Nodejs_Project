@@ -127,4 +127,27 @@ const deleteOrder = async (req, res) => {
     }
 }
 
-export { orderPlacement, getOrders, deleteOrder }
+const getOrderByStatus = async (req, res) => {
+    try {
+        const { status } = req.params;
+        const userId = req.decoded_token.id;
+
+        const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const orders = await Order.find({ userId: userId, status: status });
+
+        if (orders.length === 0) {
+            return res.status(404).json({ message: `No ${status} orders found` });
+        }
+
+        return res.status(200).json({ message: "Orders fetched successfully", data: orders });
+    }
+    catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+export { orderPlacement, getOrders, deleteOrder, getOrderByStatus }
