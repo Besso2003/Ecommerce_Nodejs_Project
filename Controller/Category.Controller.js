@@ -5,7 +5,8 @@ import Category from "../Models/Category.Model.js"
 // Seller → pending until admin approves
 export const createCategory = async (req, res) => {
     try {
-        const { role, id: userId } = req.decoded_token;
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
  
         if (role !== "seller" && role !== "admin") {
             return res.status(403).json({ message: "Only sellers or admins can create a category" });
@@ -28,19 +29,38 @@ export const createCategory = async (req, res) => {
 };
 
 // 2- Get All Categories
-// - Admins see all categories (any status)
-// - Everyone else only sees approved categories
+// Public/Customer:  approved categories
+// Seller:  their own pending and rejected categories + approved 
+// Admin: everything
 export const getAllCategories = async (req, res) => {
     try {
-        const { role } = req.decoded_token || {};
- 
         
- 
-        const categories = await Category.find().populate("createdBy", "name email");
-        res.json({count: categories.length, data: categories});
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
+
+        let filter = {};
+
+        if (role === "admin") {
+            // Admin sees everything
+            filter = {};
+        } else if (role === "seller") {
+            // Seller sees all approved + their own pending/rejected
+            filter = {
+                $or: [
+                    { status: "approved" },
+                    { createdBy: userId }
+                ]
+            };
+        } else {
+            // Customer or guest sees only approved
+            filter = { status: "approved" };
+        }
+
+        const categories = await Category.find(filter).populate("createdBy", "name email");
+        res.json({ count: categories.length, data: categories });
     }
     catch (error) {
-        res.status(500).json({ error: error.message })
+        res.status(500).json({ error: error.message });
     }
 };
  
@@ -48,10 +68,32 @@ export const getAllCategories = async (req, res) => {
 // 3- Get Category By ID
 export const getCategoryByID = async (req, res) => {
     try {
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
+
         const category = await Category.findById(req.params.id).populate("createdBy", "name email");
+        
         if (!category) {
             return res.status(404).json({ message: "Category not found" });
         }
+
+        // If category is not approved, apply visibility rules
+        if (category.status !== "approved") {
+            // Admin can see anything
+            if (role === "admin") {
+                return res.json(category);
+            }
+
+            // Seller can only see their own non-approved category
+            if (role === "seller" && category.createdBy._id.toString() === userId) {
+                return res.json(category);
+            }
+
+            // Everyone else gets 404
+            return res.status(404).json({ message: "Category not found" });
+        }
+
+        // Approved category — visible to everyone
         res.json(category);
     }
     catch (error) {
@@ -64,7 +106,8 @@ export const getCategoryByID = async (req, res) => {
 // Admin -> will approve or reject it
 export const updateCategory = async (req, res) => {
     try {
-        const { role, id: userId } = req.decoded_token;
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
 
         if (role !== "seller" && role !== "admin") {
             return res.status(403).json({ message: "Only sellers or admins can update a category" });
@@ -103,10 +146,13 @@ export const updateCategory = async (req, res) => {
     }
 };
 
-// 5- Delete Category -> Admins Only
+// 5- Delete Category 
+// Seller -> delete it own pending - rejected Category 
+// Admin -> delete anything
 export const deleteCategory = async (req, res) => {
     try {
-        const { role, id: userId } = req.decoded_token;
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
 
         if (role !== "seller" && role !== "admin") {
             return res.status(403).json({ message: "Only sellers or admins can delete a category" });
@@ -138,7 +184,8 @@ export const deleteCategory = async (req, res) => {
 // 6- Get Pending Categories -> Admin only
 export const getPendingCategories = async (req, res) => {
     try {
-        const { role } = req.decoded_token;
+        const role = req.decoded_token?.role;
+        
 
         if (role !== "admin") {
             return res.status(403).json({ message: "Only admins can view pending categories" });
@@ -157,7 +204,8 @@ export const getPendingCategories = async (req, res) => {
 // 7- Approve Category -> Admin only
 export const approveCategory = async (req, res) => {
     try {
-        const {role} = req.decoded_token;
+        const role = req.decoded_token?.role;
+        
         if (role !== "admin")
         {
              return res.status(403).json({ message: "Only admins can approve categories" });
@@ -182,7 +230,8 @@ export const approveCategory = async (req, res) => {
 // 8- Reject Category -> Admin only
 export const rejectCategory = async (req, res) => {
     try {
-        const { role } = req.decoded_token;
+        const role = req.decoded_token?.role;
+    
  
         if (role !== "admin") {
             return res.status(403).json({ message: "Only admins can reject categories" });
