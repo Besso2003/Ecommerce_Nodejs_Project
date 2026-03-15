@@ -78,7 +78,7 @@ export const getCategoryByID = async (req, res) => {
             return res.status(404).json({ message: "Category not found" });
         }
 
-        // If category is not approved, apply visibility rules
+      
         if (category.status !== "approved") {
             // Admin can see anything
             if (role === "admin") {
@@ -119,12 +119,12 @@ export const updateCategory = async (req, res) => {
             return res.status(404).json({ message: "Category not found" });
         }
 
-        // Seller can only update their own category
+        
         if (role === "seller" && category.createdBy.toString() !== userId) {
             return res.status(403).json({ message: "You can only update your own categories" });
         }
 
-        // Seller cannot edit an already approved category
+       
         if (role === "seller" && category.status === "approved") {
             return res.status(403).json({ message: "Cannot edit an approved category, contact admin" });
         }
@@ -164,17 +164,17 @@ export const deleteCategory = async (req, res) => {
             return res.status(404).json({ message: "Category not found" });
         }
 
-        // Seller can only delete their own category
+       
         if (role === "seller" && category.createdBy?.toString() !== userId) {
             return res.status(403).json({ message: "You can only delete your own categories" });
         }
 
-        // Seller cannot delete an approved category
+       
         if (role === "seller" && category.status === "approved") {
             return res.status(403).json({ message: "Cannot delete an approved category, contact admin" });
         }
 
-        // Check if any products are using this category
+ 
         const productsCount = await Product.countDocuments({ category: req.params.id });
         if (productsCount > 0) {
             return res.status(400).json({ 

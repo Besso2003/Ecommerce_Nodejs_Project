@@ -60,7 +60,7 @@ export const getAllProducts = async (req, res) => {
         const filter = {};
 
         if (role === "admin") {
-            // Admin sees everything, optionally filter by status
+            // Admin sees everything
             if (status) filter.status = status;
         } else if (role === "seller") {
            if (status) {
@@ -130,14 +130,32 @@ export const getAllProducts = async (req, res) => {
 // 3- Get Product by ID
 export const getProductById = async (req, res) => {
     try {
+        const role = req.decoded_token?.role;
+        const userId = req.decoded_token?.id;
+
         const product = await Product.findById(req.params.id)
             .populate("category", "name description")
             .populate("seller", "name email");
- 
+
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
         }
- 
+
+        if (product.status !== "approved") {
+            // Admin can see anything
+            if (role === "admin") {
+                return res.status(200).json(product);
+            }
+
+            // Seller can only see their own  product
+            if (role === "seller" && product.seller._id.toString() === userId) {
+                return res.status(200).json(product);
+            }
+
+            // Everyone else gets 404
+            return res.status(404).json({ message: "Product not found" });
+        }
+
         res.status(200).json(product);
     }
     catch (error) {
@@ -162,17 +180,17 @@ export const updateProduct = async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
  
-        // Seller can only update their own product
+       
         if (role === "seller" && product.seller.toString() !== userId) {
             return res.status(403).json({ message: "You can only update your own products" });
         }
  
-        // Seller cannot edit an already approved product
+      
         if (role === "seller" && product.status === "approved") {
             return res.status(403).json({ message: "Cannot edit an approved product" });
         }
  
-        // If category is being changed, validate it's approved
+       
         if (req.body.category) {
             const existingCategory = await Category.findById(req.body.category);
             if (!existingCategory || existingCategory.status !== "approved") {
@@ -215,12 +233,12 @@ export const deleteProduct = async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
  
-        // Seller can only delete their own product
+       
         if (role === "seller" && product.seller.toString() !== userId) {
             return res.status(403).json({ message: "You can only delete your own products" });
         }
  
-        // Seller cannot delete an approved product
+      
         if (role === "seller" && product.status === "approved") {
             return res.status(403).json({ message: "Cannot delete an approved product, contact admin" });
         }
@@ -320,12 +338,12 @@ export const updateStock = async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        // Seller can only update stock of their own product
+       
         if (role === "seller" && product.seller.toString() !== userId) {
             return res.status(403).json({ message: "You can only update stock of your own products" });
         }
 
-        // Seller can only update stock of approved products
+       
         if (role === "seller" && product.status !== "approved") {
             return res.status(403).json({ message: "Cannot update stock of a non-approved product" });
         }
