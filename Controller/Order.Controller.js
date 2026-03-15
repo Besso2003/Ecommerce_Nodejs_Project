@@ -164,15 +164,18 @@ const updateOrderStatus = async (req, res) => {
             return res.status(400).json({ message: "Invalid status value" });
         }
 
-        const order = await Order.findByIdAndUpdate(
-            orderId,
-            { status },
-            { new: true }
-        );
+        const order = await Order.findById(orderId);
 
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
         }
+
+        if ((status === "shipped" || status === "delivered") && order.status !== "confirmed") {
+            return res.status(400).json({ message: "Order must be confirmed before it can be shipped or delivered" });
+        }
+
+        order.status = status;
+        await order.save();
 
         return res.status(200).json({ message: "Order status updated successfully", data: order });
     }
