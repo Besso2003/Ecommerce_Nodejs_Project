@@ -150,4 +150,35 @@ const getOrderByStatus = async (req, res) => {
     }
 }
 
-export { orderPlacement, getOrders, deleteOrder, getOrderByStatus }
+const updateOrderStatus = async (req, res) => {
+    try {
+        const role = req.decoded_token?.role;
+        const { status, orderId } = req.body;
+
+        if (role !== "seller" && role !== "admin") {
+            return res.status(403).json({ message: "Only sellers or admins can update order status" });
+        }
+
+        const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ message: "Invalid status value" });
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            orderId,
+            { status },
+            { new: true }
+        );
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        return res.status(200).json({ message: "Order status updated successfully", data: order });
+    }
+    catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+}
+
+export { orderPlacement, getOrders, deleteOrder, getOrderByStatus, updateOrderStatus }
