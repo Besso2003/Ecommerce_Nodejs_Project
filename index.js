@@ -14,15 +14,12 @@ import webhookRouter from "./Routes/webhookRoutes.js";
 const app = express();
 dbConnect();
 
-// --------------------- Stripe Webhook ---------------------
-// Mount webhook route BEFORE express.json()
-// It uses express.raw() inside webhookRouter
+// BEFORE express.json()
 app.use("/api", webhookRouter);
 
-// --------------------- JSON Middleware ---------------------
-app.use(express.json()); // for all other routes
+app.use(express.json());
 
-// --------------------- Routers ---------------------
+// Routers
 app.use(userRouter);
 app.use(adminRouter);
 app.use(wishlistRouter);
